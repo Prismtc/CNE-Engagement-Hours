@@ -4,7 +4,7 @@ Internal analysis of CNE contact hours by organization across 2023–2025.
 
 ## Charts
 
-All charts are viewable in your browser via the links below.
+All html charts are viewable in your browser via the links below.
 
 ### 2023
 - [Organizations by Contact Hours](https://prismtc.github.io/CNE-Contact-Hours/2023 Organizations by Contact Hours Bar.html)
