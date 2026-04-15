@@ -7,10 +7,10 @@ library(tidyverse)
 library(fuzzyjoin)
 library(plotly)
 library(htmlwidgets)
-
+11
 
 ### Work Directory =============================================================
-setwd("/Users/Jack/Desktop/CNE /Data Analysis/Contact Hours")
+setwd("/Users/Jack/Desktop/CNE /Data Analysis/Engagement Hours")
 
 ### Loading Data ===============================================================
 CH23 <- read.csv("Data/2023 stats and organization tracking JD 102925(12-13-23).csv", check.names = FALSE)
@@ -51,7 +51,7 @@ CH23.1 <- CH23 %>%
 ## Redoing the 'New/Returning' section -----------------------------------------
 CH23.2 <- CH23.1 %>%
   mutate(
-    MemberType2023 = if_else(
+    PartnerType2023 = if_else(
       `Existing customer in 2022` == 1,
       "Returning",
       "New",
@@ -63,9 +63,9 @@ CH23.2 <- CH23.1 %>%
 # Manual re-assignment (returning customer from before 2022)
 CH23.2 <- CH23.2 %>%
   mutate(
-    MemberType2023 = case_when(
+    PartnerType2023 = case_when(
       Organization == "Community Foundation for Monterey County" ~ "Returning",
-      TRUE ~ MemberType2023
+      TRUE ~ PartnerType2023
     )
   )
 
@@ -76,7 +76,7 @@ CH23.3 <- CH23.2 %>%
   ) %>%
   mutate(
     across(
-      .cols = where(is.character) & !c(Organization, SIEDI, MemberType2023),
+      .cols = where(is.character) & !c(Organization, SIEDI, PartnerType2023),
       ~ parse_number(.)
     )
   ) %>%
@@ -112,7 +112,7 @@ dups_collapsed23 <- CH23.4 %>%
     ),
     
     SIEDI = first(SIEDI),
-    MemberType2023 = first(na.omit(MemberType2023)),
+    PartnerType2023 = first(na.omit(PartnerType2023)),
     .groups = "drop"
   )
 
@@ -140,7 +140,7 @@ CH23.6 <- CH23.5 %>%
     )
   )
 
-## Removing Orgs with no contact hours -----------------------------------
+## Removing Orgs with no engagement hours -----------------------------------
 CH23.7 <- CH23.6 %>%
   filter(
     !Organization == "Total"
@@ -235,7 +235,7 @@ CH24.4 <- CH24.3 %>%
     )
   )
 
-## Removing Orgs with no contact hours -----------------------------------
+## Removing Orgs with no engagement hours -----------------------------------
 CH24.5 <- CH24.4 %>%
   filter(
     !Organization == "Total"
@@ -246,10 +246,10 @@ CH24.5 <- CH24.4 %>%
   select(-SIEDI)
 
 
-## Identifying New/Returning Members -------------------------------------------
+## Identifying New/Returning Partners -------------------------------------------
 CH24.6 <- CH24.5 %>%
   mutate(
-    MemberType2024 = case_when(
+    PartnerType2024 = case_when(
       ID %in% na.omit(ExistingOrgs23$ID) ~ "Returning",
       TRUE ~ "New"
     )
@@ -259,7 +259,7 @@ CH24.6 <- CH24.5 %>%
 # Identifying New Orgs
 NewOrgs <- CH24.6 %>%
   filter(
-    MemberType2024 == "New",
+    PartnerType2024 == "New",
     !is.na(ID),
     ID != "UNAF"
   ) %>%
@@ -351,7 +351,7 @@ CH25.4 <- CH25.3 %>%
     )
   )
 
-## Removing Orgs with no contact hours -----------------------------------------
+## Removing Orgs with no engagement hours -----------------------------------------
 CH25.5 <- CH25.4 %>%
   filter(
     !Organization == "Total"
@@ -362,10 +362,10 @@ CH25.5 <- CH25.4 %>%
   select(-SIEDI)
 
 
-## Identifying New/Returning Members -------------------------------------------
+## Identifying New/Returning Partners -------------------------------------------
 CH25.6 <- CH25.5 %>%
   mutate(
-    MemberType2025 = case_when(
+    PartnerType2025 = case_when(
       ID == "UNAF" ~ "New",
       ID %in% na.omit(ExistingOrgs24$ID) ~ "Returning",
       TRUE ~ "New"
@@ -388,13 +388,50 @@ CH25C <- read.csv("Data/2025 Clean.csv", check.names = FALSE)
 
 
 ############################# Data Visualization ###############################
+### Pallettes
+### Color Palettes =============================================================
+modality_colors_full <- c(
+  "LEAD"                            = "#F27B35",
+  "LEAD Coaching"                   = "#C45A1A",
+  "SDI for LEADers"                 = "#F7AA78",
+  "LEAD Alumni"                     = "#FDD89A",
+  "Peer Support"                    = "#FFC000",
+  "Workshops"                       = "#76A646",
+  "Board Connect"                   = "#457ABF",
+  "Board Empowerment"               = "#76A8D9",
+  "Office Hours"                    = "#4D7A2A",
+  "ED Wrap Around"                  = "#9DC46A",
+  "In-House Calls"                  = "#2D5A96",
+  "OD"                              = "#ADC4D9",
+  "Mental Wellbeing Wrap Around"    = "#A5A5A5",
+  "Consulting After Grant Training" = "#C9C9C9"
+)
+
+modality_colors_no_lead <- c(
+  "Peer Support"                    = "#FFC000",
+  "Workshops"                       = "#76A646",
+  "Board Connect"                   = "#457ABF",
+  "Board Empowerment"               = "#76A8D9",
+  "Office Hours"                    = "#4D7A2A",
+  "ED Wrap Around"                  = "#9DC46A",
+  "In-House Calls"                  = "#2D5A96",
+  "OD"                              = "#ADC4D9",
+  "Mental Wellbeing Wrap Around"    = "#A5A5A5",
+  "Consulting After Grant Training" = "#C9C9C9"
+)
+
+
+# Color Pallete
+hombre <- c("#A5A5A5", "#457ABF", "#76A646", "#FFC000", "#F27B35")
+hombre2 <- c("#F27B35", "#FFC000", "#76A646", "#457ABF", "#A5A5A5")
+
 ### Individual Year Viz ========================================================
 ## New/Returning by Year - Pie -------------------------------------------------
 # 2023
 CH23C2 <- CH23C %>%
   filter(!`Total hours 2023` == 0)
 
-ggplot(CH23C2, aes(x = "", fill = MemberType2023)) +
+ggplot(CH23C2, aes(x = "", fill = PartnerType2023)) +
   geom_bar(width = 1, color = "white") +
   coord_polar(theta = "y") +
   geom_text(
@@ -414,22 +451,22 @@ ggplot(CH23C2, aes(x = "", fill = MemberType2023)) +
     values = c("#76A646", "#457ABF")
   ) +
   labs(
-    title = "Member Type as Share of Total (2023)",
-    fill = "Member Type"
+    title = "Partner Type as Share of Total (2023)",
+    fill = "Partner Type"
   ) +
   theme_void() +
   theme(
     plot.title = element_text(hjust = 0.5, face = "bold")
   )
 
-ggsave("Charts/Member Type by Year (Pie)/2023 Member Type Pie.png",
+ggsave("Charts/Partner Type by Year (Pie)/2023 Partner Type Pie.png",
        width = 6,
        height = 4,
        dpi = 300
        )
 
 na_orgs <- CH23C2 %>%
-  filter(is.na(MemberType2023)) %>%
+  filter(is.na(PartnerType2023)) %>%
   select(Organization) 
 
 print(na_orgs)
@@ -439,7 +476,7 @@ print(na_orgs)
 CH24C2 <- CH24C %>%
   filter(!`Total hours 2024` == 0)
 
-ggplot(CH24C2, aes(x = "", fill = MemberType2024)) +
+ggplot(CH24C2, aes(x = "", fill = PartnerType2024)) +
   geom_bar(width = 1, color = "white") +
   coord_polar(theta = "y") +
   geom_text(
@@ -459,15 +496,15 @@ ggplot(CH24C2, aes(x = "", fill = MemberType2024)) +
     values = c("#76A646", "#457ABF")
   ) +
   labs(
-    title = "Member Type as Share of Total (2024)",
-    fill = "Member Type"
+    title = "Partner Type as Share of Total (2024)",
+    fill = "Partner Type"
   ) +
   theme_void() +
   theme(
     plot.title = element_text(hjust = 0.5, face = "bold")
   )
 
-ggsave("Charts/Member Type by Year (Pie)/2024 Member Type Pie.png",
+ggsave("Charts/Partner Type by Year (Pie)/2024 Partner Type Pie.png",
        width = 6,
        height = 4,
        dpi = 300
@@ -479,7 +516,7 @@ ggsave("Charts/Member Type by Year (Pie)/2024 Member Type Pie.png",
 CH25C2 <- CH25C %>%
   filter(!`Total hours 2025` == 0)
 
-ggplot(CH25C2, aes(x = "", fill = MemberType2025)) +
+ggplot(CH25C2, aes(x = "", fill = PartnerType2025)) +
   geom_bar(width = 1, color = "white") +
   coord_polar(theta = "y") +
   geom_text(
@@ -499,8 +536,8 @@ ggplot(CH25C2, aes(x = "", fill = MemberType2025)) +
     values = c("#76A646", "#457ABF")
   ) +
   labs(
-    title = "Member Type as Share of Total (2025)",
-    fill = "Member Type"
+    title = "Partner Type as Share of Total (2025)",
+    fill = "Partner Type"
   ) +
   theme_void() +
   theme(
@@ -508,32 +545,36 @@ ggplot(CH25C2, aes(x = "", fill = MemberType2025)) +
   )
 
 
-ggsave("Charts/Member Type by Year (Pie)/2025 Member Type Pie.png",
+ggsave("Charts/Partner Type by Year (Pie)/2025 Partner Type Pie.png",
        width = 6,
        height = 4,
        dpi = 300
 )
 
 
-## Contact Hours by Member Type - Bar  -----------------------------------------
-# 2023
+## Engagement Hours by Partner Type - Bar  -----------------------------------------
+# Shared y-axis limit
+y_max_CHMT <- 2000
+
+#2023
 CH23_CHMT <- CH23C %>%
-  group_by(MemberType2023) %>%
+  group_by(PartnerType2023) %>%
   summarise(TotalHours = sum(`Total hours 2023`, na.rm = TRUE))
 
-ggplot(CH23_CHMT, aes(x = MemberType2023, y = TotalHours, fill = MemberType2023)) +
+ggplot(CH23_CHMT, aes(x = PartnerType2023, y = TotalHours, fill = PartnerType2023)) +
   geom_col() +
   geom_text(
-    aes(label = TotalHours),   # Show only total hours per member type
+    aes(label = TotalHours),   # Show only total hours per partner type
     vjust = 1.5,
     color = "white",
     fontface = "bold",
     size = 5
   ) +
   scale_fill_manual(values = c("New" = "#76A646", "Returning" = "#457ABF")) +
+  scale_y_continuous(limits = c(0, y_max_CHMT)) +
   labs(
-    title = "Total Contact Hours by Member Type (2023)",
-    x = "Member Type",
+    title = "Total Engagement Hours by Partner Type (2023)",
+    x = "Partner Type",
     y = "Total Hours"
   ) +
   theme_minimal() +
@@ -543,7 +584,7 @@ ggplot(CH23_CHMT, aes(x = MemberType2023, y = TotalHours, fill = MemberType2023)
     plot.title = element_text(hjust = 0.5, face = "bold")
   )
 
-ggsave("Charts/Contact Hours by Member Type (Bar)/2023 Contact Hour by Member Type Bar.png",
+ggsave("Charts/Engagement Hours by Partner Type (Bar)/2023 Engagement Hour by Partner Type Bar.png",
        width = 6,
        height = 4,
        dpi = 300
@@ -552,22 +593,23 @@ ggsave("Charts/Contact Hours by Member Type (Bar)/2023 Contact Hour by Member Ty
 
 # 2024
 CH24_CHMT <- CH24C %>%
-  group_by(MemberType2024) %>%
+  group_by(PartnerType2024) %>%
   summarise(TotalHours = sum(`Total hours 2024`, na.rm = TRUE))
 
-ggplot(CH24_CHMT, aes(x = MemberType2024, y = TotalHours, fill = MemberType2024)) +
+ggplot(CH24_CHMT, aes(x = PartnerType2024, y = TotalHours, fill = PartnerType2024)) +
   geom_col() +
   geom_text(
-    aes(label = TotalHours),   # Show only total hours per member type
+    aes(label = TotalHours),   # Show only total hours per partner type
     vjust = 1.5,
     color = "white",
     fontface = "bold",
     size = 5
   ) +
   scale_fill_manual(values = c("New" = "#76A646", "Returning" = "#457ABF")) +
+  scale_y_continuous(limits = c(0, y_max_CHMT)) +
   labs(
-    title = "Total Contact Hours by Member Type (2024)",
-    x = "Member Type",
+    title = "Total Engagement Hours by Partner Type (2024)",
+    x = "Partner Type",
     y = "Total Hours"
   ) +
   theme_minimal() +
@@ -577,7 +619,7 @@ ggplot(CH24_CHMT, aes(x = MemberType2024, y = TotalHours, fill = MemberType2024)
     plot.title = element_text(hjust = 0.5, face = "bold")
   )
 
-ggsave("Charts/Contact Hours by Member Type (Bar)/2024 Contact Hour by Member Type Bar.png",
+ggsave("Charts/Engagement Hours by Partner Type (Bar)/2024 Engagement Hour by Partner Type Bar.png",
        width = 6,
        height = 4,
        dpi = 300
@@ -585,22 +627,23 @@ ggsave("Charts/Contact Hours by Member Type (Bar)/2024 Contact Hour by Member Ty
 
 # 2025
 CH25_CHMT <- CH25C %>%
-  group_by(MemberType2025) %>%
+  group_by(PartnerType2025) %>%
   summarise(TotalHours = sum(`Total hours 2025`, na.rm = TRUE))
 
-ggplot(CH25_CHMT, aes(x = MemberType2025, y = TotalHours, fill = MemberType2025)) +
+ggplot(CH25_CHMT, aes(x = PartnerType2025, y = TotalHours, fill = PartnerType2025)) +
   geom_col() +
   geom_text(
-    aes(label = TotalHours),   # Show only total hours per member type
+    aes(label = TotalHours),   # Show only total hours per partner type
     vjust = 1.5,
     color = "white",
     fontface = "bold",
     size = 5
   ) +
   scale_fill_manual(values = c("New" = "#76A646", "Returning" = "#457ABF")) +
+  scale_y_continuous(limits = c(0, y_max_CHMT)) +
   labs(
-    title = "Total Contact Hours by Member Type (2025)",
-    x = "Member Type",
+    title = "Total Engagement Hours by Partner Type (2025)",
+    x = "Partner Type",
     y = "Total Hours"
   ) +
   theme_minimal() +
@@ -610,7 +653,7 @@ ggplot(CH25_CHMT, aes(x = MemberType2025, y = TotalHours, fill = MemberType2025)
     plot.title = element_text(hjust = 0.5, face = "bold")
   )
 
-ggsave("Charts/Contact Hours by Member Type (Bar)/2025 Contact Hour by Member Type Bar.png",
+ggsave("Charts/Engagement Hours by Partner Type (Bar)/2025 Engagement Hour by Partner Type Bar.png",
        width = 6,
        height = 4,
        dpi = 300
@@ -619,11 +662,11 @@ ggsave("Charts/Contact Hours by Member Type (Bar)/2025 Contact Hour by Member Ty
 ## Orgs with Hours - Pie ---------------------------------------------------------
 # 2023
 CH23_NH <- CH23C %>%
-  filter(MemberType2023 == "Returning") %>%
-  mutate(InContact = ifelse(`Total hours 2023` == 0, 0, 1)) %>%
-  select(Organization, InContact)
+  filter(PartnerType2023 == "Returning") %>%
+  mutate(Engaged = ifelse(`Total hours 2023` == 0, 0, 1)) %>%
+  select(Organization, Engaged)
 
-ggplot(CH23_NH, aes(x = "", fill = factor(InContact))) +  # <-- convert to factor
+ggplot(CH23_NH, aes(x = "", fill = factor(Engaged))) +  # <-- convert to factor
   geom_bar(width = 1, color = "white") +
   coord_polar(theta = "y") +
   geom_text(
@@ -641,18 +684,18 @@ ggplot(CH23_NH, aes(x = "", fill = factor(InContact))) +  # <-- convert to facto
   ) +
   scale_fill_manual(
     values = c("0" = "#457ABF", "1" = "#76A646"),   # map factor levels to colors
-    labels = c("0" = "Not in Contact", "1" = "In Contact")
+    labels = c("0" = "Not Engaged", "1" = "Engaged")
   ) +
   labs(
-    title = "Returning Members in Contact (2023)",
-    fill = "Contact Status"
+    title = "Returning Partners Engaged (2023)",
+    fill = "Engagement Status"
   ) +
   theme_void() +
   theme(
     plot.title = element_text(hjust = 0.5, face = "bold")
   )
 
-ggsave("Charts/Returning Members in Contact/2023 Returning Member Contact Pie.png",
+ggsave("Charts/Returning Partners Engaged/2023 Returning Partner Engagement Pie.png",
        width = 6,
        height = 4,
        dpi = 300
@@ -660,11 +703,11 @@ ggsave("Charts/Returning Members in Contact/2023 Returning Member Contact Pie.pn
 
 # 2024
 CH24_NH <- CH24C %>%
-  filter(MemberType2024 == "Returning") %>%
-  mutate(InContact = ifelse(`Total hours 2024` == 0, 0, 1)) %>%
-  select(Organization, InContact)
+  filter(PartnerType2024 == "Returning") %>%
+  mutate(Engaged = ifelse(`Total hours 2024` == 0, 0, 1)) %>%
+  select(Organization, Engaged)
 
-ggplot(CH24_NH, aes(x = "", fill = factor(InContact))) +  # <-- convert to factor
+ggplot(CH24_NH, aes(x = "", fill = factor(Engaged))) +  # <-- convert to factor
   geom_bar(width = 1, color = "white") +
   coord_polar(theta = "y") +
   geom_text(
@@ -682,18 +725,18 @@ ggplot(CH24_NH, aes(x = "", fill = factor(InContact))) +  # <-- convert to facto
   ) +
   scale_fill_manual(
     values = c("0" = "#457ABF", "1" = "#76A646"),   # map factor levels to colors
-    labels = c("0" = "Not in Contact", "1" = "In Contact")
+    labels = c("0" = "Not Engaged", "1" = "Engaged")
   ) +
   labs(
-    title = "Returning Members in Contact (2024)",
-    fill = "Contact Status"
+    title = "Returning Partners Engaged (2024)",
+    fill = "Engagement Status"
   ) +
   theme_void() +
   theme(
     plot.title = element_text(hjust = 0.5, face = "bold")
   )
 
-ggsave("Charts/Returning Members in Contact/2024 Returning Member Contact Pie.png",
+ggsave("Charts/Returning Partners Engaged/2024 Returning Partner Engagement Pie.png",
        width = 6,
        height = 4,
        dpi = 300
@@ -701,11 +744,11 @@ ggsave("Charts/Returning Members in Contact/2024 Returning Member Contact Pie.pn
 
 # 2025
 CH25_NH <- CH25C %>%
-  filter(MemberType2025 == "Returning") %>%
-  mutate(InContact = ifelse(`Total hours 2025` == 0, 0, 1)) %>%
-  select(Organization, InContact)
+  filter(PartnerType2025 == "Returning") %>%
+  mutate(Engaged = ifelse(`Total hours 2025` == 0, 0, 1)) %>%
+  select(Organization, Engaged)
 
-ggplot(CH25_NH, aes(x = "", fill = factor(InContact))) +  # <-- convert to factor
+ggplot(CH25_NH, aes(x = "", fill = factor(Engaged))) +  # <-- convert to factor
   geom_bar(width = 1, color = "white") +
   coord_polar(theta = "y") +
   geom_text(
@@ -723,18 +766,18 @@ ggplot(CH25_NH, aes(x = "", fill = factor(InContact))) +  # <-- convert to facto
   ) +
   scale_fill_manual(
     values = c("0" = "#457ABF", "1" = "#76A646"),   # map factor levels to colors
-    labels = c("0" = "Not in Contact", "1" = "In Contact")
+    labels = c("0" = "Not Engaged", "1" = "Engaged")
   ) +
   labs(
-    title = "Returning Members in Contact (2025)",
-    fill = "Contact Status"
+    title = "Returning Partners Engaged (2025)",
+    fill = "Engagement Status"
   ) +
   theme_void() +
   theme(
     plot.title = element_text(hjust = 0.5, face = "bold")
   )
 
-ggsave("Charts/Returning Members in Contact/2025 Returning Member Contact Pie.png",
+ggsave("Charts/Returning Partners Engaged/2025 Returning Partner Engagement Pie.png",
        width = 6,
        height = 4,
        dpi = 300
@@ -742,9 +785,10 @@ ggsave("Charts/Returning Members in Contact/2025 Returning Member Contact Pie.pn
 
 
 ## Orgs by Hours - Bar ---------------------------------------------------------
-# 2023
-hombre <- c("#A5A5A5", "#457ABF", "#76A646", "#FFC000", "#F27B35")
+# Shared Max
+y_max_OH <- 100 
 
+# 2023
 CH23_OH <- CH23C %>%
   filter(`Total hours 2023` > 0) %>%
   mutate(Organization = factor(
@@ -763,9 +807,10 @@ OH23 <- ggplot(CH23_OH, aes(
 )) +
   geom_col() +
   scale_fill_gradientn(colors = hombre) +
+  scale_y_continuous(limits = c(0, y_max_OH)) +
   labs(
-    title = "Organizations by Hours in Contact (2023)",
-    subtitle = "Organizations with 0 contact hours have been excluded",
+    title = "Organizations by Hours in Engagement (2023)",
+    subtitle = "Organizations with 0 engagement hours have been excluded",
     x = NULL,
     y = "Total Hours"
   ) +
@@ -784,7 +829,7 @@ ggplotly(OH23, tooltip = "text")
 saveOH23<- ggplotly(OH23, tooltip = "text")
 
 
-saveWidget(saveOH23, "Charts/Orgs by Contact Hours (Bar)/2023 Organizations by Contact Hours Bar.html", selfcontained = TRUE)
+saveWidget(saveOH23, "Charts/Orgs by Engagement Hours (Bar)/2023 Organizations by Engagement Hours Bar.html", selfcontained = TRUE)
 
 
 # 2024
@@ -806,9 +851,10 @@ OH24 <- ggplot(CH24_OH, aes(
 )) +
   geom_col() +
   scale_fill_gradientn(colors = hombre) +
+  scale_y_continuous(limits = c(0, y_max_OH)) +
   labs(
-    title = "Organizations by Hours in Contact (2024)",
-    subtitle = "Organizations with 0 contact hours have been excluded",
+    title = "Organizations by Hours in Engagement (2024)",
+    subtitle = "Organizations with 0 engagement hours have been excluded",
     x = NULL,
     y = "Total Hours"
   ) +
@@ -827,7 +873,7 @@ ggplotly(OH24, tooltip = "text")
 saveOH24<- ggplotly(OH24, tooltip = "text")
 
 
-saveWidget(saveOH24, "Charts/Orgs by Contact Hours (Bar)/2024 Organizations by Contact Hours Bar.html", selfcontained = TRUE)
+saveWidget(saveOH24, "Charts/Orgs by Engagement Hours (Bar)/2024 Organizations by Engagement Hours Bar.html", selfcontained = TRUE)
 
 
 # 2025
@@ -849,9 +895,10 @@ OH25 <- ggplot(CH25_OH, aes(
 )) +
   geom_col() +
   scale_fill_gradientn(colors = hombre) +
+  scale_y_continuous(limits = c(0, y_max_OH)) +
   labs(
-    title = "Organizations by Hours in Contact (2025)",
-    subtitle = "Organizations with 0 contact hours have been excluded",
+    title = "Organizations by Hours in Engagement (2025)",
+    subtitle = "Organizations with 0 engagement hours have been excluded",
     x = NULL,
     y = "Total Hours"
   ) +
@@ -870,43 +917,33 @@ ggplotly(OH25, tooltip = "text")
 saveOH25<- ggplotly(OH25, tooltip = "text")
 
 
-saveWidget(saveOH25, "Charts/Orgs by Contact Hours (Bar)/2025 Organizations by Contact Hours Bar.html", selfcontained = TRUE)
+saveWidget(saveOH25, "Charts/Orgs by Engagement Hours (Bar)/2025 Organizations by Engagement Hours Bar.html", selfcontained = TRUE)
 
 
-## Hours by Contact Modality - Bar ---------------------------------------------
+## Hours by Engagement Modality - Bar ---------------------------------------------
+# Shared y-axis limit
+y_max_HCB <- 2000
+
 # 2023
 CH23_HCB <- CH23C %>%
   select(-`Total hours 2023`) %>%
   summarise(across(where(is.numeric), \(x) sum(x, na.rm = TRUE))) %>%
-  pivot_longer(
-    cols = everything(),
-    names_to = "Modality",
-    values_to = "Hours"
-  ) %>%
+  pivot_longer(cols = everything(), names_to = "Modality", values_to = "Hours") %>%
+  filter(Hours > 0) %>%   
   arrange(desc(Hours))
-
-hombre2 <- c("#F27B35", "#FFC000", "#76A646","#457ABF","#A5A5A5")
-palette <- rep(hombre2, length.out = nrow(CH23_HCB))
-
 
 CH23_HCB$Modality <- factor(CH23_HCB$Modality, levels = CH23_HCB$Modality)
 
 ggplot(CH23_HCB, aes(x = Modality, y = Hours, fill = Modality)) +
   geom_col() +
-  geom_text(
-    aes(label = Hours),
-    vjust = -0.2,
-    color = "black",
-    fontface = "bold",
-    size = 4
-  ) +
-  scale_y_continuous(expand = expansion(mult = c(0, 0.15))) +
-  scale_fill_manual(values = palette) +
+  geom_text(aes(label = Hours), vjust = -0.2, color = "black", fontface = "bold", size = 4) +
+  scale_y_continuous(limits = c(0, y_max_HCB)) +
+  scale_fill_manual(values = modality_colors_full) +
   theme_minimal() +
   labs(
-    title = "Contact Hours by Modality (2023)",
-    subtitle = "Sorted within year;\nColors not consistent across years due to changing modalities.",
-    x = "Contact Modality",
+    title = "Engagement Hours by Modality (2023)",
+    subtitle = "Sorted within year",
+    x = "Engagement Modality",
     y = "Total Hours"
   ) +
   theme(
@@ -916,46 +953,30 @@ ggplot(CH23_HCB, aes(x = Modality, y = Hours, fill = Modality)) +
     axis.text.x = element_text(angle = 45, hjust = 1)
   )
 
-ggsave("Charts/Contact Hours by Modality/2023 Contact Hours by Modality Bar.png",
-       width = 6,
-       height = 4,
-       dpi = 300
-)
+ggsave("Charts/Engagement Hours by Modality/2023 Engagement Hours by Modality Bar.png",
+       width = 6, height = 4, dpi = 300)
 
 
 # 2024
 CH24_HCB <- CH24C %>%
   select(-`Total hours 2024`) %>%
   summarise(across(where(is.numeric), \(x) sum(x, na.rm = TRUE))) %>%
-  pivot_longer(
-    cols = everything(),
-    names_to = "Modality",
-    values_to = "Hours"
-  ) %>%
+  pivot_longer(cols = everything(), names_to = "Modality", values_to = "Hours") %>%
+  filter(Hours > 0) %>%   
   arrange(desc(Hours))
-
-hombre2 <- c("#F27B35", "#FFC000", "#76A646","#457ABF","#A5A5A5")
-palette <- rep(hombre2, length.out = nrow(CH24_HCB))
-
 
 CH24_HCB$Modality <- factor(CH24_HCB$Modality, levels = CH24_HCB$Modality)
 
 ggplot(CH24_HCB, aes(x = Modality, y = Hours, fill = Modality)) +
   geom_col() +
-  geom_text(
-    aes(label = Hours),
-    vjust = -0.2,
-    color = "black",
-    fontface = "bold",
-    size = 4
-  ) +
-  scale_y_continuous(expand = expansion(mult = c(0, 0.15))) +
-  scale_fill_manual(values = palette) +
+  geom_text(aes(label = Hours), vjust = -0.2, color = "black", fontface = "bold", size = 4) +
+  scale_y_continuous(limits = c(0, y_max_HCB)) +
+  scale_fill_manual(values = modality_colors_full) +
   theme_minimal() +
   labs(
-    title = "Total Contact Hours by Modality (2024)",
-    subtitle = "Sorted within year;\ncolors not consistent across years due to changing modalities",
-    x = "Contact Modality",
+    title = "Total Engagement Hours by Modality (2024)",
+    subtitle = "Sorted within year",
+    x = "Engagement Modality",
     y = "Total Hours"
   ) +
   theme(
@@ -965,48 +986,30 @@ ggplot(CH24_HCB, aes(x = Modality, y = Hours, fill = Modality)) +
     axis.text.x = element_text(angle = 45, hjust = 1)
   )
 
-
-
-ggsave("Charts/Contact Hours by Modality/2024 Contact Hours by Modality Bar.png",
-       width = 6,
-       height = 4,
-       dpi = 300
-)
+ggsave("Charts/Engagement Hours by Modality/2024 Engagement Hours by Modality Bar.png",
+       width = 6, height = 4, dpi = 300)
 
 
 # 2025
 CH25_HCB <- CH25C %>%
   select(-`Total hours 2025`) %>%
   summarise(across(where(is.numeric), \(x) sum(x, na.rm = TRUE))) %>%
-  pivot_longer(
-    cols = everything(),
-    names_to = "Modality",
-    values_to = "Hours"
-  ) %>%
+  pivot_longer(cols = everything(), names_to = "Modality", values_to = "Hours") %>%
+  filter(Hours > 0) %>%   
   arrange(desc(Hours))
-
-hombre2 <- c("#F27B35", "#FFC000", "#76A646","#457ABF","#A5A5A5")
-palette <- rep(hombre2, length.out = nrow(CH25_HCB))
-
 
 CH25_HCB$Modality <- factor(CH25_HCB$Modality, levels = CH25_HCB$Modality)
 
 ggplot(CH25_HCB, aes(x = Modality, y = Hours, fill = Modality)) +
   geom_col() +
-  geom_text(
-    aes(label = Hours),
-    vjust = -0.2,
-    color = "black",
-    fontface = "bold",
-    size = 4
-  ) +
-  scale_y_continuous(expand = expansion(mult = c(0, 0.15))) +
-  scale_fill_manual(values = palette) +
+  geom_text(aes(label = Hours), vjust = -0.2, color = "black", fontface = "bold", size = 4) +
+  scale_y_continuous(limits = c(0, y_max_HCB)) +
+  scale_fill_manual(values = modality_colors_full) +
   theme_minimal() +
   labs(
-    title = "Total Contact Hours by Modality (2025)",
-    subtitle = "Sorted within year;\ncolors not consistent across years due to changing modalities",
-    x = "Contact Modality",
+    title = "Total Engagement Hours by Modality (2025)",
+    subtitle = "Sorted within year",
+    x = "Engagement Modality",
     y = "Total Hours"
   ) +
   theme(
@@ -1016,20 +1019,15 @@ ggplot(CH25_HCB, aes(x = Modality, y = Hours, fill = Modality)) +
     axis.text.x = element_text(angle = 45, hjust = 1)
   )
 
-
-
-ggsave("Charts/Contact Hours by Modality/2025 Contact Hours by Modality Bar.png",
-       width = 6,
-       height = 4,
-       dpi = 300
-)
+ggsave("Charts/Engagement Hours by Modality/2025 Engagement Hours by Modality Bar.png",
+       width = 6, height = 4, dpi = 300)
 
 ### Longitudinal Viz ===========================================================
-## Contact hours by Contact Modality - YOY -------------------------------------
+## Engagement hours by Engagement Modality - YOY -------------------------------------
 # Making the helper function: collapsing one year to (Year, Modality, Hours)
-prep_modality_year <- function(df, year, total_col, member_col) {
+prep_modality_year <- function(df, year, total_col, partner_col) {
   df %>%
-    select(-any_of(c(total_col, member_col, "Organization"))) %>%  # keep only modality columns
+    select(-any_of(c(total_col, partner_col, "Organization"))) %>%  # keep only modality columns
     summarise(across(where(is.numeric), ~sum(.x, na.rm = TRUE))) %>%
     pivot_longer(
       cols = everything(),
@@ -1044,9 +1042,9 @@ prep_modality_year <- function(df, year, total_col, member_col) {
 
 # Making the longitudinal dataset
 CH_yoy <- bind_rows(
-  prep_modality_year(CH23C, 2023, "Total hours 2023", "MemberType2023"),
-  prep_modality_year(CH24C, 2024, "Total hours 2024", "MemberType2024"),
-  prep_modality_year(CH25C, 2025, "Total hours 2025", "MemberType2025")
+  prep_modality_year(CH23C, 2023, "Total hours 2023", "PartnerType2023"),
+  prep_modality_year(CH24C, 2024, "Total hours 2024", "PartnerType2024"),
+  prep_modality_year(CH25C, 2025, "Total hours 2025", "PartnerType2025")
 ) %>%
   group_by(Year, Modality) %>%                      # safety: if duplicates ever occur
   summarise(Hours = sum(Hours, na.rm = TRUE), .groups = "drop") %>%
@@ -1056,8 +1054,6 @@ CH_yoy <- bind_rows(
 CH_yoy <- CH_yoy %>%
   mutate(Year = as.integer(Year))
 
-# Color Pallete
-hombre <- c("#A5A5A5", "#457ABF", "#76A646", "#FFC000", "#F27B35")
 
 # Plot 
 CHYOY_html <- plot_ly(
@@ -1076,10 +1072,10 @@ CHYOY_html <- plot_ly(
   hoverinfo = "text"
 ) %>%
   layout(
-    title = list(text = "Total Contact Hours by Modality (Year over Year)", x = 0.5),
+    title = list(text = "Total Engagement Hours by Modality (Year over Year)", x = 0.5),
     xaxis = list(title = "", tickmode = "linear", dtick = 1),
     yaxis = list(
-      title = "Total Contact Hours",
+      title = "Total Engagement Hours",
       tickformat = ",",     # commas
       autorange = TRUE
     ),
@@ -1110,16 +1106,16 @@ CHYOY_html <- plot_ly(
 # Save as
 saveWidget(
   CHYOY_html,
-  "Charts/Contact Hours by Modality YoY/YoY Contact Hours by Modality.html",
+  "Charts/Engagement Hours by Modality YoY/YoY Engagement Hours by Modality.html",
   selfcontained = TRUE
 )
 
-## Contact Hours by Member Type - YOY ------------------------------------------
-# Helper: collapse one year to (Year, MemberType, TotalHours)
-prep_membertype_year <- function(df, year, total_col, member_col) {
+## Engagement Hours by Partner Type - YOY ------------------------------------------
+# Helper: collapse one year to (Year, PartnerType, TotalHours)
+prep_partnertype_year <- function(df, year, total_col, partner_col) {
   df %>%
     filter(.data[[total_col]] != 0) %>%   # optional: match your pie-chart logic
-    group_by(MemberType = .data[[member_col]]) %>%
+    group_by(PartnerType = .data[[partner_col]]) %>%
     summarise(
       TotalHours = sum(.data[[total_col]], na.rm = TRUE),
       .groups = "drop"
@@ -1129,18 +1125,18 @@ prep_membertype_year <- function(df, year, total_col, member_col) {
 
 # Build longitudinal dataset
 CHMT_yoy <- bind_rows(
-  prep_membertype_year(CH23C, 2023, "Total hours 2023", "MemberType2023"),
-  prep_membertype_year(CH24C, 2024, "Total hours 2024", "MemberType2024"),
-  prep_membertype_year(CH25C, 2025, "Total hours 2025", "MemberType2025")
+  prep_partnertype_year(CH23C, 2023, "Total hours 2023", "PartnerType2023"),
+  prep_partnertype_year(CH24C, 2024, "Total hours 2024", "PartnerType2024"),
+  prep_partnertype_year(CH25C, 2025, "Total hours 2025", "PartnerType2025")
 ) %>%
   mutate(
     Year = as.integer(Year),
-    MemberType = factor(MemberType, levels = c("New", "Returning"))
+    PartnerType = factor(PartnerType, levels = c("New", "Returning"))
   ) %>%
-  arrange(MemberType, Year)
+  arrange(PartnerType, Year)
 
 # GGplot it
-ggplot(CHMT_yoy, aes(x = Year, y = TotalHours, color = MemberType)) +
+ggplot(CHMT_yoy, aes(x = Year, y = TotalHours, color = PartnerType)) +
   geom_line(linewidth = 1.2) +
   geom_point(size = 3) +
   geom_text(
@@ -1161,10 +1157,10 @@ ggplot(CHMT_yoy, aes(x = Year, y = TotalHours, color = MemberType)) +
     expand = expansion(mult = c(0.02, 0.12))
   ) +
   labs(
-    title = "Total Contact Hours by Member Type (Year over Year)",
+    title = "Total Engagement Hours by Partner Type (Year over Year)",
     x = "",
-    y = "Total Contact Hours",
-    color = "Member Type"
+    y = "Total Engagement Hours",
+    color = "Partner Type"
   ) +
   theme_minimal() +
   theme(
@@ -1173,7 +1169,7 @@ ggplot(CHMT_yoy, aes(x = Year, y = TotalHours, color = MemberType)) +
 
 # Save it
 ggsave(
-  "Charts/Contact Hours by Member Type YoY/YoY Contact Hours by Member Type.png",
+  "Charts/Engagement Hours by Partner Type YoY/YoY Engagement Hours by Partner Type.png",
   width = 7,
   height = 4,
   dpi = 300
@@ -1201,7 +1197,7 @@ CH25C_NL <- CH25C %>%
 CH23C2_NL <- CH23C_NL %>%
   filter(!`Total hours 2023` == 0)
 
-ggplot(CH23C2_NL, aes(x = "", fill = MemberType2023)) +
+ggplot(CH23C2_NL, aes(x = "", fill = PartnerType2023)) +
   geom_bar(width = 1, color = "white") +
   coord_polar(theta = "y") +
   geom_text(
@@ -1218,18 +1214,18 @@ ggplot(CH23C2_NL, aes(x = "", fill = MemberType2023)) +
     fontface = "bold"
   ) +
   scale_fill_manual(values = c("#76A646", "#457ABF")) +
-  labs(title = "Member Type as Share of Total (2023, Non-LEAD)", fill = "Member Type") +
+  labs(title = "Partner Type as Share of Total (2023, Non-LEAD)", fill = "Partner Type") +
   theme_void() +
   theme(plot.title = element_text(hjust = 0.5, face = "bold"))
 
-ggsave("Charts/Non-LEAD/Member Type by Year (Pie)/2023 Member Type Pie Non-LEAD.png",
+ggsave("Charts/Non-LEAD/Partner Type by Year (Pie)/2023 Partner Type Pie Non-LEAD.png",
        width = 6, height = 4, dpi = 300)
 
 # 2024
 CH24C2_NL <- CH24C_NL %>%
   filter(!`Total hours 2024` == 0)
 
-ggplot(CH24C2_NL, aes(x = "", fill = MemberType2024)) +
+ggplot(CH24C2_NL, aes(x = "", fill = PartnerType2024)) +
   geom_bar(width = 1, color = "white") +
   coord_polar(theta = "y") +
   geom_text(
@@ -1246,18 +1242,18 @@ ggplot(CH24C2_NL, aes(x = "", fill = MemberType2024)) +
     fontface = "bold"
   ) +
   scale_fill_manual(values = c("#76A646", "#457ABF")) +
-  labs(title = "Member Type as Share of Total (2024, Non-LEAD)", fill = "Member Type") +
+  labs(title = "Partner Type as Share of Total (2024, Non-LEAD)", fill = "Partner Type") +
   theme_void() +
   theme(plot.title = element_text(hjust = 0.5, face = "bold"))
 
-ggsave("Charts/Non-LEAD/Member Type by Year (Pie)/2024 Member Type Pie Non-LEAD.png",
+ggsave("Charts/Non-LEAD/Partner Type by Year (Pie)/2024 Partner Type Pie Non-LEAD.png",
        width = 6, height = 4, dpi = 300)
 
 # 2025
 CH25C2_NL <- CH25C_NL %>%
   filter(!`Total hours 2025` == 0)
 
-ggplot(CH25C2_NL, aes(x = "", fill = MemberType2025)) +
+ggplot(CH25C2_NL, aes(x = "", fill = PartnerType2025)) +
   geom_bar(width = 1, color = "white") +
   coord_polar(theta = "y") +
   geom_text(
@@ -1274,79 +1270,85 @@ ggplot(CH25C2_NL, aes(x = "", fill = MemberType2025)) +
     fontface = "bold"
   ) +
   scale_fill_manual(values = c("#76A646", "#457ABF")) +
-  labs(title = "Member Type as Share of Total (2025, Non-LEAD)", fill = "Member Type") +
+  labs(title = "Partner Type as Share of Total (2025, Non-LEAD)", fill = "Partner Type") +
   theme_void() +
   theme(plot.title = element_text(hjust = 0.5, face = "bold"))
 
-ggsave("Charts/Non-LEAD/Member Type by Year (Pie)/2025 Member Type Pie Non-LEAD.png",
+ggsave("Charts/Non-LEAD/Partner Type by Year (Pie)/2025 Partner Type Pie Non-LEAD.png",
        width = 6, height = 4, dpi = 300)
 
-## Contact Hours by Member Type - Bar ------------------------------------------
+## Engagement Hours by Partner Type - Bar ------------------------------------------
+# Shared y-axis limit across all years
+y_max_CHMT_NL <- 600
+
 # 2023
 CH23_CHMT_NL <- CH23C_NL %>%
-  group_by(MemberType2023) %>%
+  group_by(PartnerType2023) %>%
   summarise(TotalHours = sum(`Total hours 2023`, na.rm = TRUE))
 
-ggplot(CH23_CHMT_NL, aes(x = MemberType2023, y = TotalHours, fill = MemberType2023)) +
+ggplot(CH23_CHMT_NL, aes(x = PartnerType2023, y = TotalHours, fill = PartnerType2023)) +
   geom_col() +
   geom_text(aes(label = TotalHours), vjust = 1.5, color = "white", fontface = "bold", size = 5) +
   scale_fill_manual(values = c("New" = "#76A646", "Returning" = "#457ABF")) +
-  labs(title = "Total Contact Hours by Member Type (2023, Non-LEAD)",
-       x = "Member Type", y = "Total Hours") +
+  scale_y_continuous(limits = c(0, y_max_CHMT_NL)) +
+  labs(title = "Total Engagement Hours by Partner Type (2023, Non-LEAD)",
+       x = "Partner Type", y = "Total Hours") +
   theme_minimal() +
   theme(axis.text.x = element_text(angle = 45, hjust = 1),
         legend.position = "none",
         plot.title = element_text(hjust = 0.5, face = "bold"))
 
-ggsave("Charts/Non-LEAD/Contact Hours by Member Type (Bar)/2023 Contact Hour by Member Type Bar Non-LEAD.png",
+ggsave("Charts/Non-LEAD/Engagement Hours by Partner Type (Bar)/2023 Engagement Hour by Partner Type Bar Non-LEAD.png",
        width = 6, height = 4, dpi = 300)
 
 # 2024
 CH24_CHMT_NL <- CH24C_NL %>%
-  group_by(MemberType2024) %>%
+  group_by(PartnerType2024) %>%
   summarise(TotalHours = sum(`Total hours 2024`, na.rm = TRUE))
 
-ggplot(CH24_CHMT_NL, aes(x = MemberType2024, y = TotalHours, fill = MemberType2024)) +
+ggplot(CH24_CHMT_NL, aes(x = PartnerType2024, y = TotalHours, fill = PartnerType2024)) +
   geom_col() +
   geom_text(aes(label = TotalHours), vjust = 1.5, color = "white", fontface = "bold", size = 5) +
   scale_fill_manual(values = c("New" = "#76A646", "Returning" = "#457ABF")) +
-  labs(title = "Total Contact Hours by Member Type (2024, Non-LEAD)",
-       x = "Member Type", y = "Total Hours") +
+  scale_y_continuous(limits = c(0, y_max_CHMT_NL)) +
+  labs(title = "Total Engagement Hours by Partner Type (2024, Non-LEAD)",
+       x = "Partner Type", y = "Total Hours") +
   theme_minimal() +
   theme(axis.text.x = element_text(angle = 45, hjust = 1),
         legend.position = "none",
         plot.title = element_text(hjust = 0.5, face = "bold"))
 
-ggsave("Charts/Non-LEAD/Contact Hours by Member Type (Bar)/2024 Contact Hour by Member Type Bar Non-LEAD.png",
+ggsave("Charts/Non-LEAD/Engagement Hours by Partner Type (Bar)/2024 Engagement Hour by Partner Type Bar Non-LEAD.png",
        width = 6, height = 4, dpi = 300)
 
 # 2025
 CH25_CHMT_NL <- CH25C_NL %>%
-  group_by(MemberType2025) %>%
+  group_by(PartnerType2025) %>%
   summarise(TotalHours = sum(`Total hours 2025`, na.rm = TRUE))
 
-ggplot(CH25_CHMT_NL, aes(x = MemberType2025, y = TotalHours, fill = MemberType2025)) +
+ggplot(CH25_CHMT_NL, aes(x = PartnerType2025, y = TotalHours, fill = PartnerType2025)) +
   geom_col() +
   geom_text(aes(label = TotalHours), vjust = 1.5, color = "white", fontface = "bold", size = 5) +
   scale_fill_manual(values = c("New" = "#76A646", "Returning" = "#457ABF")) +
-  labs(title = "Total Contact Hours by Member Type (2025, Non-LEAD)",
-       x = "Member Type", y = "Total Hours") +
+  scale_y_continuous(limits = c(0, y_max_CHMT_NL)) +
+  labs(title = "Total Engagement Hours by Partner Type (2025, Non-LEAD)",
+       x = "Partner Type", y = "Total Hours") +
   theme_minimal() +
   theme(axis.text.x = element_text(angle = 45, hjust = 1),
         legend.position = "none",
         plot.title = element_text(hjust = 0.5, face = "bold"))
 
-ggsave("Charts/Non-LEAD/Contact Hours by Member Type (Bar)/2025 Contact Hour by Member Type Bar Non-LEAD.png",
+ggsave("Charts/Non-LEAD/Engagement Hours by Partner Type (Bar)/2025 Engagement Hour by Partner Type Bar Non-LEAD.png",
        width = 6, height = 4, dpi = 300)
 
 ## Orgs with Hours - Pie -------------------------------------------------------
 # 2023
 CH23_NH_NL <- CH23C_NL %>%
-  filter(MemberType2023 == "Returning") %>%
-  mutate(InContact = ifelse(`Total hours 2023` == 0, 0, 1)) %>%
-  select(Organization, InContact)
+  filter(PartnerType2023 == "Returning") %>%
+  mutate(Engaged = ifelse(`Total hours 2023` == 0, 0, 1)) %>%
+  select(Organization, Engaged)
 
-ggplot(CH23_NH_NL, aes(x = "", fill = factor(InContact))) +
+ggplot(CH23_NH_NL, aes(x = "", fill = factor(Engaged))) +
   geom_bar(width = 1, color = "white") +
   coord_polar(theta = "y") +
   geom_text(
@@ -1361,21 +1363,21 @@ ggplot(CH23_NH_NL, aes(x = "", fill = factor(InContact))) +
     size = 4, color = "white", fontface = "bold"
   ) +
   scale_fill_manual(values = c("0" = "#457ABF", "1" = "#76A646"),
-                    labels = c("0" = "Not in Contact", "1" = "In Contact")) +
-  labs(title = "Returning Members in Contact (2023, Non-LEAD)", fill = "Contact Status") +
+                    labels = c("0" = "Not Engaged", "1" = "Engaged")) +
+  labs(title = "Returning Partners Engaged (2023, Non-LEAD)", fill = "Engagement Status") +
   theme_void() +
   theme(plot.title = element_text(hjust = 0.5, face = "bold"))
 
-ggsave("Charts/Non-LEAD/Returning Members in Contact/2023 Returning Member Contact Pie Non-LEAD.png",
+ggsave("Charts/Non-LEAD/Returning Partners Engaged/2023 Returning Partner Engagement Pie Non-LEAD.png",
        width = 6, height = 4, dpi = 300)
 
 # 2024
 CH24_NH_NL <- CH24C_NL %>%
-  filter(MemberType2024 == "Returning") %>%
-  mutate(InContact = ifelse(`Total hours 2024` == 0, 0, 1)) %>%
-  select(Organization, InContact)
+  filter(PartnerType2024 == "Returning") %>%
+  mutate(Engaged = ifelse(`Total hours 2024` == 0, 0, 1)) %>%
+  select(Organization, Engaged)
 
-ggplot(CH24_NH_NL, aes(x = "", fill = factor(InContact))) +
+ggplot(CH24_NH_NL, aes(x = "", fill = factor(Engaged))) +
   geom_bar(width = 1, color = "white") +
   coord_polar(theta = "y") +
   geom_text(
@@ -1390,21 +1392,21 @@ ggplot(CH24_NH_NL, aes(x = "", fill = factor(InContact))) +
     size = 4, color = "white", fontface = "bold"
   ) +
   scale_fill_manual(values = c("0" = "#457ABF", "1" = "#76A646"),
-                    labels = c("0" = "Not in Contact", "1" = "In Contact")) +
-  labs(title = "Returning Members in Contact (2024, Non-LEAD)", fill = "Contact Status") +
+                    labels = c("0" = "Not Engaged", "1" = "Engaged")) +
+  labs(title = "Returning Partners Engaged (2024, Non-LEAD)", fill = "Engagement Status") +
   theme_void() +
   theme(plot.title = element_text(hjust = 0.5, face = "bold"))
 
-ggsave("Charts/Non-LEAD/Returning Members in Contact/2024 Returning Member Contact Pie Non-LEAD.png",
+ggsave("Charts/Non-LEAD/Returning Partners Engaged/2024 Returning Partner Engagement Pie Non-LEAD.png",
        width = 6, height = 4, dpi = 300)
 
 # 2025
 CH25_NH_NL <- CH25C_NL %>%
-  filter(MemberType2025 == "Returning") %>%
-  mutate(InContact = ifelse(`Total hours 2025` == 0, 0, 1)) %>%
-  select(Organization, InContact)
+  filter(PartnerType2025 == "Returning") %>%
+  mutate(Engaged = ifelse(`Total hours 2025` == 0, 0, 1)) %>%
+  select(Organization, Engaged)
 
-ggplot(CH25_NH_NL, aes(x = "", fill = factor(InContact))) +
+ggplot(CH25_NH_NL, aes(x = "", fill = factor(Engaged))) +
   geom_bar(width = 1, color = "white") +
   coord_polar(theta = "y") +
   geom_text(
@@ -1419,16 +1421,19 @@ ggplot(CH25_NH_NL, aes(x = "", fill = factor(InContact))) +
     size = 4, color = "white", fontface = "bold"
   ) +
   scale_fill_manual(values = c("0" = "#457ABF", "1" = "#76A646"),
-                    labels = c("0" = "Not in Contact", "1" = "In Contact")) +
-  labs(title = "Returning Members in Contact (2025, Non-LEAD)", fill = "Contact Status") +
+                    labels = c("0" = "Not Engaged", "1" = "Engaged")) +
+  labs(title = "Returning Partners Engaged (2025, Non-LEAD)", fill = "Engagement Status") +
   theme_void() +
   theme(plot.title = element_text(hjust = 0.5, face = "bold"))
 
-ggsave("Charts/Non-LEAD/Returning Members in Contact/2025 Returning Member Contact Pie Non-LEAD.png",
+ggsave("Charts/Non-LEAD/Returning Partners Engaged/2025 Returning Partner Engagement Pie Non-LEAD.png",
        width = 6, height = 4, dpi = 300)
 
 ## Orgs by Hours - Bar ---------------------------------------------------------
 hombre <- c("#A5A5A5", "#457ABF", "#76A646", "#FFC000", "#F27B35")
+
+# Consistent Scale
+y_max_OH_NL <- 23.5
 
 # 2023
 CH23_OH_NL <- CH23C_NL %>%
@@ -1441,8 +1446,9 @@ OH23_NL <- ggplot(CH23_OH_NL, aes(x = Organization, y = `Total hours 2023`,
                                   fill = `Total hours 2023`, text = hover_text)) +
   geom_col() +
   scale_fill_gradientn(colors = hombre) +
-  labs(title = "Organizations by Hours in Contact (2023, Non-LEAD)",
-       subtitle = "Organizations with 0 contact hours have been excluded",
+  scale_y_continuous(limits = c(0, y_max_OH_NL)) +
+  labs(title = "Organizations by Hours in Engagement (2023, Non-LEAD)",
+       subtitle = "Organizations with 0 engagement hours have been excluded",
        x = NULL, y = "Total Hours") +
   theme_minimal() +
   theme(axis.text.x = element_blank(), axis.ticks.x = element_blank(),
@@ -1451,7 +1457,7 @@ OH23_NL <- ggplot(CH23_OH_NL, aes(x = Organization, y = `Total hours 2023`,
         plot.subtitle = element_text(hjust = 0.5, face = "italic"))
 
 saveWidget(ggplotly(OH23_NL, tooltip = "text"),
-           "Charts/Non-LEAD/Orgs by Contact Hours (Bar)/2023 Organizations by Contact Hours Bar Non-LEAD.html",
+           "Charts/Non-LEAD/Orgs by Engagement Hours (Bar)/2023 Organizations by Engagement Hours Bar Non-LEAD.html",
            selfcontained = TRUE)
 
 # 2024
@@ -1465,8 +1471,9 @@ OH24_NL <- ggplot(CH24_OH_NL, aes(x = Organization, y = `Total hours 2024`,
                                   fill = `Total hours 2024`, text = hover_text)) +
   geom_col() +
   scale_fill_gradientn(colors = hombre) +
-  labs(title = "Organizations by Hours in Contact (2024, Non-LEAD)",
-       subtitle = "Organizations with 0 contact hours have been excluded",
+  scale_y_continuous(limits = c(0, y_max_OH_NL)) +
+  labs(title = "Organizations by Hours in Engagement (2024, Non-LEAD)",
+       subtitle = "Organizations with 0 engagement hours have been excluded",
        x = NULL, y = "Total Hours") +
   theme_minimal() +
   theme(axis.text.x = element_blank(), axis.ticks.x = element_blank(),
@@ -1475,7 +1482,7 @@ OH24_NL <- ggplot(CH24_OH_NL, aes(x = Organization, y = `Total hours 2024`,
         plot.subtitle = element_text(hjust = 0.5, face = "italic"))
 
 saveWidget(ggplotly(OH24_NL, tooltip = "text"),
-           "Charts/Non-LEAD/Orgs by Contact Hours (Bar)/2024 Organizations by Contact Hours Bar Non-LEAD.html",
+           "Charts/Non-LEAD/Orgs by Engagement Hours (Bar)/2024 Organizations by Engagement Hours Bar Non-LEAD.html",
            selfcontained = TRUE)
 
 # 2025
@@ -1489,8 +1496,9 @@ OH25_NL <- ggplot(CH25_OH_NL, aes(x = Organization, y = `Total hours 2025`,
                                   fill = `Total hours 2025`, text = hover_text)) +
   geom_col() +
   scale_fill_gradientn(colors = hombre) +
-  labs(title = "Organizations by Hours in Contact (2025, Non-LEAD)",
-       subtitle = "Organizations with 0 contact hours have been excluded",
+  scale_y_continuous(limits = c(0, y_max_OH_NL)) +
+  labs(title = "Organizations by Hours in Engagement (2025, Non-LEAD)",
+       subtitle = "Organizations with 0 engagement hours have been excluded",
        x = NULL, y = "Total Hours") +
   theme_minimal() +
   theme(axis.text.x = element_blank(), axis.ticks.x = element_blank(),
@@ -1499,37 +1507,44 @@ OH25_NL <- ggplot(CH25_OH_NL, aes(x = Organization, y = `Total hours 2025`,
         plot.subtitle = element_text(hjust = 0.5, face = "italic"))
 
 saveWidget(ggplotly(OH25_NL, tooltip = "text"),
-           "Charts/Non-LEAD/Orgs by Contact Hours (Bar)/2025 Organizations by Contact Hours Bar Non-LEAD.html",
+           "Charts/Non-LEAD/Orgs by Engagement Hours (Bar)/2025 Organizations by Engagement Hours Bar Non-LEAD.html",
            selfcontained = TRUE)
 
-## Hours by Contact Modality - Bar ---------------------------------------------
-hombre2 <- c("#F27B35", "#FFC000", "#76A646", "#457ABF", "#A5A5A5")
+## Hours by Engagement Modality - Bar ---------------------------------------------
+# Shared Y-Max
+y_max_HCB_NL <- 350
+
 
 # 2023
 CH23_HCB_NL <- CH23C_NL %>%
   select(-`Total hours 2023`) %>%
   summarise(across(where(is.numeric), \(x) sum(x, na.rm = TRUE))) %>%
   pivot_longer(cols = everything(), names_to = "Modality", values_to = "Hours") %>%
+  filter(Hours > 0) %>%   
   arrange(desc(Hours))
 
 CH23_HCB_NL$Modality <- factor(CH23_HCB_NL$Modality, levels = CH23_HCB_NL$Modality)
 
-ggplot(CH23_HCB_NL, aes(x = Modality, y = Hours,
-                        fill = Modality)) +
+ggplot(CH23_HCB_NL, aes(x = Modality, y = Hours, fill = Modality)) +
   geom_col() +
   geom_text(aes(label = Hours), vjust = -0.2, color = "black", fontface = "bold", size = 4) +
-  scale_y_continuous(expand = expansion(mult = c(0, 0.15))) +
-  scale_fill_manual(values = rep(hombre2, length.out = nrow(CH23_HCB_NL))) +
+  scale_y_continuous(limits = c(0, y_max_HCB_NL)) +
+  scale_fill_manual(values = modality_colors_no_lead) +
   theme_minimal() +
-  labs(title = "Contact Hours by Modality (2023, Non-LEAD)",
-       subtitle = "Sorted within year;\nColors not consistent across years due to changing modalities.",
-       x = "Contact Modality", y = "Total Hours") +
-  theme(legend.position = "none",
-        plot.title = element_text(hjust = 0.5, face = "bold", margin = margin(b = 6)),
-        plot.subtitle = element_text(hjust = 0.5, size = 10, color = "gray40", margin = margin(b = 10)),
-        axis.text.x = element_text(angle = 45, hjust = 1))
+  labs(
+    title = "Engagement Hours by Modality (2023, Non-LEAD)",
+    subtitle = "Sorted within year",
+    x = "Engagement Modality",
+    y = "Total Hours"
+  ) +
+  theme(
+    legend.position = "none",
+    plot.title = element_text(hjust = 0.5, face = "bold", margin = margin(b = 6)),
+    plot.subtitle = element_text(hjust = 0.5, size = 10, color = "gray40", margin = margin(b = 10)),
+    axis.text.x = element_text(angle = 45, hjust = 1)
+  )
 
-ggsave("Charts/Non-LEAD/Contact Hours by Modality/2023 Contact Hours by Modality Bar Non-LEAD.png",
+ggsave("Charts/Non-LEAD/Engagement Hours by Modality/2023 Engagement Hours by Modality Bar Non-LEAD.png",
        width = 6, height = 4, dpi = 300)
 
 # 2024
@@ -1537,6 +1552,7 @@ CH24_HCB_NL <- CH24C_NL %>%
   select(-`Total hours 2024`) %>%
   summarise(across(where(is.numeric), \(x) sum(x, na.rm = TRUE))) %>%
   pivot_longer(cols = everything(), names_to = "Modality", values_to = "Hours") %>%
+  filter(Hours > 0) %>%   
   arrange(desc(Hours))
 
 CH24_HCB_NL$Modality <- factor(CH24_HCB_NL$Modality, levels = CH24_HCB_NL$Modality)
@@ -1544,18 +1560,23 @@ CH24_HCB_NL$Modality <- factor(CH24_HCB_NL$Modality, levels = CH24_HCB_NL$Modali
 ggplot(CH24_HCB_NL, aes(x = Modality, y = Hours, fill = Modality)) +
   geom_col() +
   geom_text(aes(label = Hours), vjust = -0.2, color = "black", fontface = "bold", size = 4) +
-  scale_y_continuous(expand = expansion(mult = c(0, 0.15))) +
-  scale_fill_manual(values = rep(hombre2, length.out = nrow(CH24_HCB_NL))) +
+  scale_y_continuous(limits = c(0, y_max_HCB_NL)) +
+  scale_fill_manual(values = modality_colors_no_lead) +
   theme_minimal() +
-  labs(title = "Total Contact Hours by Modality (2024, Non-LEAD)",
-       subtitle = "Sorted within year;\ncolors not consistent across years due to changing modalities",
-       x = "Contact Modality", y = "Total Hours") +
-  theme(legend.position = "none",
-        plot.title = element_text(hjust = 0.5, face = "bold", margin = margin(b = 6)),
-        plot.subtitle = element_text(hjust = 0.5, size = 10, color = "gray40", margin = margin(b = 10)),
-        axis.text.x = element_text(angle = 45, hjust = 1))
+  labs(
+    title = "Total Engagement Hours by Modality (2024, Non-LEAD)",
+    subtitle = "Sorted within year",
+    x = "Engagement Modality",
+    y = "Total Hours"
+  ) +
+  theme(
+    legend.position = "none",
+    plot.title = element_text(hjust = 0.5, face = "bold", margin = margin(b = 6)),
+    plot.subtitle = element_text(hjust = 0.5, size = 10, color = "gray40", margin = margin(b = 10)),
+    axis.text.x = element_text(angle = 45, hjust = 1)
+  )
 
-ggsave("Charts/Non-LEAD/Contact Hours by Modality/2024 Contact Hours by Modality Bar Non-LEAD.png",
+ggsave("Charts/Non-LEAD/Engagement Hours by Modality/2024 Engagement Hours by Modality Bar Non-LEAD.png",
        width = 6, height = 4, dpi = 300)
 
 # 2025
@@ -1563,6 +1584,7 @@ CH25_HCB_NL <- CH25C_NL %>%
   select(-`Total hours 2025`) %>%
   summarise(across(where(is.numeric), \(x) sum(x, na.rm = TRUE))) %>%
   pivot_longer(cols = everything(), names_to = "Modality", values_to = "Hours") %>%
+  filter(Hours > 0) %>%   
   arrange(desc(Hours))
 
 CH25_HCB_NL$Modality <- factor(CH25_HCB_NL$Modality, levels = CH25_HCB_NL$Modality)
@@ -1570,26 +1592,31 @@ CH25_HCB_NL$Modality <- factor(CH25_HCB_NL$Modality, levels = CH25_HCB_NL$Modali
 ggplot(CH25_HCB_NL, aes(x = Modality, y = Hours, fill = Modality)) +
   geom_col() +
   geom_text(aes(label = Hours), vjust = -0.2, color = "black", fontface = "bold", size = 4) +
-  scale_y_continuous(expand = expansion(mult = c(0, 0.15))) +
-  scale_fill_manual(values = rep(hombre2, length.out = nrow(CH25_HCB_NL))) +
+  scale_y_continuous(limits = c(0, y_max_HCB_NL)) +
+  scale_fill_manual(values = modality_colors_no_lead) +
   theme_minimal() +
-  labs(title = "Total Contact Hours by Modality (2025, Non-LEAD)",
-       subtitle = "Sorted within year;\ncolors not consistent across years due to changing modalities",
-       x = "Contact Modality", y = "Total Hours") +
-  theme(legend.position = "none",
-        plot.title = element_text(hjust = 0.5, face = "bold", margin = margin(b = 6)),
-        plot.subtitle = element_text(hjust = 0.5, size = 10, color = "gray40", margin = margin(b = 10)),
-        axis.text.x = element_text(angle = 45, hjust = 1))
+  labs(
+    title = "Total Engagement Hours by Modality (2025, Non-LEAD)",
+    subtitle = "Sorted within year",
+    x = "Engagement Modality",
+    y = "Total Hours"
+  ) +
+  theme(
+    legend.position = "none",
+    plot.title = element_text(hjust = 0.5, face = "bold", margin = margin(b = 6)),
+    plot.subtitle = element_text(hjust = 0.5, size = 10, color = "gray40", margin = margin(b = 10)),
+    axis.text.x = element_text(angle = 45, hjust = 1)
+  )
 
-ggsave("Charts/Non-LEAD/Contact Hours by Modality/2025 Contact Hours by Modality Bar Non-LEAD.png",
+ggsave("Charts/Non-LEAD/Engagement Hours by Modality/2025 Engagement Hours by Modality Bar Non-LEAD.png",
        width = 6, height = 4, dpi = 300)
 
 ### Longitudinal Viz ===========================================================
-## Contact Hours by Modality - YOY ---------------------------------------------
+## Engagement Hours by Modality - YOY ---------------------------------------------
 CH_yoy_NL <- bind_rows(
-  prep_modality_year(CH23C_NL, 2023, "Total hours 2023", "MemberType2023"),
-  prep_modality_year(CH24C_NL, 2024, "Total hours 2024", "MemberType2024"),
-  prep_modality_year(CH25C_NL, 2025, "Total hours 2025", "MemberType2025")
+  prep_modality_year(CH23C_NL, 2023, "Total hours 2023", "PartnerType2023"),
+  prep_modality_year(CH24C_NL, 2024, "Total hours 2024", "PartnerType2024"),
+  prep_modality_year(CH25C_NL, 2025, "Total hours 2025", "PartnerType2025")
 ) %>%
   group_by(Year, Modality) %>%
   summarise(Hours = sum(Hours, na.rm = TRUE), .groups = "drop") %>%
@@ -1606,9 +1633,9 @@ CHYOY_NL_html <- plot_ly(
   hoverinfo = "text"
 ) %>%
   layout(
-    title = list(text = "Total Contact Hours by Modality (Year over Year, Non-LEAD)", x = 0.5),
+    title = list(text = "Total Engagement Hours by Modality (Year over Year, Non-LEAD)", x = 0.5),
     xaxis = list(title = "", tickmode = "linear", dtick = 1),
-    yaxis = list(title = "Total Contact Hours", tickformat = ",", autorange = TRUE),
+    yaxis = list(title = "Total Engagement Hours", tickformat = ",", autorange = TRUE),
     legend = list(itemclick = "toggle", itemdoubleclick = "toggleothers")
   ) %>%
   config(displayModeBar = TRUE) %>%
@@ -1626,42 +1653,98 @@ CHYOY_NL_html <- plot_ly(
   ")
 
 saveWidget(CHYOY_NL_html,
-           "Charts/Non-LEAD/Contact Hours by Modality YoY/YoY Contact Hours by Modality Non-LEAD.html",
+           "Charts/Non-LEAD/Engagement Hours by Modality YoY/YoY Engagement Hours by Modality Non-LEAD.html",
            selfcontained = TRUE)
 
-## Contact Hours by Member Type - YOY ------------------------------------------
+## Engagement Hours by Partner Type - YOY ------------------------------------------
 CHMT_yoy_NL <- bind_rows(
-  prep_membertype_year(CH23C_NL, 2023, "Total hours 2023", "MemberType2023"),
-  prep_membertype_year(CH24C_NL, 2024, "Total hours 2024", "MemberType2024"),
-  prep_membertype_year(CH25C_NL, 2025, "Total hours 2025", "MemberType2025")
+  prep_partnertype_year(CH23C_NL, 2023, "Total hours 2023", "PartnerType2023"),
+  prep_partnertype_year(CH24C_NL, 2024, "Total hours 2024", "PartnerType2024"),
+  prep_partnertype_year(CH25C_NL, 2025, "Total hours 2025", "PartnerType2025")
 ) %>%
   mutate(Year = as.integer(Year),
-         MemberType = factor(MemberType, levels = c("New", "Returning"))) %>%
-  arrange(MemberType, Year)
+         PartnerType = factor(PartnerType, levels = c("New", "Returning"))) %>%
+  arrange(PartnerType, Year)
 
-ggplot(CHMT_yoy_NL, aes(x = Year, y = TotalHours, color = MemberType)) +
+ggplot(CHMT_yoy_NL, aes(x = Year, y = TotalHours, color = PartnerType)) +
   geom_line(linewidth = 1.2) +
   geom_point(size = 3) +
   geom_text(aes(label = scales::comma(TotalHours)), vjust = -0.8, size = 4, show.legend = FALSE) +
   scale_color_manual(values = c("New" = "#76A646", "Returning" = "#457ABF")) +
   scale_x_continuous(breaks = c(2023, 2024, 2025), expand = expansion(mult = c(0.08, 0.08))) +
   scale_y_continuous(labels = scales::comma, expand = expansion(mult = c(0.02, 0.12))) +
-  labs(title = "Total Contact Hours by Member Type (Year over Year, Non-LEAD)",
-       x = "", y = "Total Contact Hours", color = "Member Type") +
+  labs(title = "Total Engagement Hours by Partner Type (Year over Year, Non-LEAD)",
+       x = "", y = "Total Engagement Hours", color = "Partner Type") +
   theme_minimal() +
   theme(plot.title = element_text(hjust = 0.5, face = "bold"))
 
-ggsave("Charts/Non-LEAD/Contact Hours by Member Type YoY/YoY Contact Hours by Member Type Non-LEAD.png",
+ggsave("Charts/Non-LEAD/Engagement Hours by Partner Type YoY/YoY Engagement Hours by Partner Type Non-LEAD.png",
        width = 7, height = 4, dpi = 300)
 
 
+############################# Unique Org Summary ###############################
+### Unique Org Summary =========================================================
+# Unique orgs per year (excluding UNAF and 0 hour orgs)
+unique_orgs_23 <- CH23C %>% filter(!is.na(ID), ID != "UNAF", `Total hours 2023` > 0) %>% distinct(ID) %>% nrow()
+unique_orgs_24 <- CH24C %>% filter(!is.na(ID), ID != "UNAF", `Total hours 2024` > 0) %>% distinct(ID) %>% nrow()
+unique_orgs_25 <- CH25C %>% filter(!is.na(ID), ID != "UNAF", `Total hours 2025` > 0) %>% distinct(ID) %>% nrow()
+
+# Unique orgs across all 3 years combined
+unique_orgs_total <- bind_rows(
+  CH23C %>% filter(`Total hours 2023` > 0) %>% select(ID),
+  CH24C %>% filter(`Total hours 2024` > 0) %>% select(ID),
+  CH25C %>% filter(`Total hours 2025` > 0) %>% select(ID)
+) %>%
+  filter(!is.na(ID), ID != "UNAF") %>%
+  distinct(ID) %>%
+  nrow()
+
+# New orgs in the past 3 years (orgs that appear in 24 or 25 but NOT in 23)
+orgs_23 <- CH23C %>% filter(!is.na(ID), ID != "UNAF", `Total hours 2023` > 0) %>% distinct(ID) %>% pull(ID)
+
+new_orgs_since_23 <- bind_rows(
+  CH24C %>% filter(`Total hours 2024` > 0) %>% select(ID),
+  CH25C %>% filter(`Total hours 2025` > 0) %>% select(ID)
+) %>%
+  filter(!is.na(ID), ID != "UNAF") %>%
+  distinct(ID) %>%
+  filter(!ID %in% orgs_23) %>%
+  nrow()
+
+# Print summary
+cat("Unique orgs in 2023:", unique_orgs_23, "\n")
+cat("Unique orgs in 2024:", unique_orgs_24, "\n")
+cat("Unique orgs in 2025:", unique_orgs_25, "\n")
+cat("Unique orgs across 2023-2025:", unique_orgs_total, "\n")
+cat("New orgs added since 2023:", new_orgs_since_23, "\n")
+
+### Confirming the same # of orgs in 2023 and 2025 is real =====================
+## Obtaining Full Lists --------------------------------------------------------
+# Get the org lists for each year
+orgs_23_list <- CH23C %>% filter(!is.na(ID), ID != "UNAF", `Total hours 2023` > 0) %>% distinct(ID, Organization)
+orgs_24_list <- CH24C %>% filter(!is.na(ID), ID != "UNAF", `Total hours 2024` > 0) %>% distinct(ID, Organization)
+orgs_25_list <- CH25C %>% filter(!is.na(ID), ID != "UNAF", `Total hours 2025` > 0) %>% distinct(ID, Organization)
+
+## Identifying Differences -----------------------------------------------------
+# Orgs in 2025 but NOT in 2023 (genuinely new)
+in_25_not_23 <- orgs_25_list %>% filter(!ID %in% orgs_23_list$ID)
+
+# Orgs in 2023 but NOT in 2025 (dropped off)
+in_23_not_25 <- orgs_23_list %>% filter(!ID %in% orgs_25_list$ID)
+
+cat("Orgs in 2025 but not 2023:", nrow(in_25_not_23), "\n")
+cat("Orgs in 2023 but not 2025:", nrow(in_23_not_25), "\n")
+
+View(in_25_not_23)
+View(in_23_not_25)
+
 ### Notes ======================================================================
-### I want to do something figuring out how many returning members stay PAST one year of returning.
+### I want to do something figuring out how many returning partners stay PAST one year of returning.
 ## Might be getting unique identifiers for stakeholders from SALESFORCE
   # Asked for a CSV of their internal identifiers & org name from the salesforce system
 
 
-### Contact Hours by nonprofit YOY
+### Engagement Hours by nonprofit YOY
   ## Profile of top #25 orgs
     # if the visual is too crowded, cut the number down (pick top __, or most interesting orgs.)
 
@@ -1675,4 +1758,7 @@ ggsave("Charts/Non-LEAD/Contact Hours by Member Type YoY/YoY Contact Hours by Me
 "#76A646"
 "#457ABF"
 "#A5A5A5"
+
+
+
 
