@@ -809,7 +809,7 @@ OH23 <- ggplot(CH23_OH, aes(
   scale_fill_gradientn(colors = hombre) +
   scale_y_continuous(limits = c(0, y_max_OH)) +
   labs(
-    title = "Organizations by Hours in Engagement (2023)",
+    title = "Organizations by Hours Engaged (2023)",
     subtitle = "Organizations with 0 engagement hours have been excluded",
     x = NULL,
     y = "Total Hours"
@@ -853,7 +853,7 @@ OH24 <- ggplot(CH24_OH, aes(
   scale_fill_gradientn(colors = hombre) +
   scale_y_continuous(limits = c(0, y_max_OH)) +
   labs(
-    title = "Organizations by Hours in Engagement (2024)",
+    title = "Organizations by Hours Engaged (2024)",
     subtitle = "Organizations with 0 engagement hours have been excluded",
     x = NULL,
     y = "Total Hours"
@@ -897,7 +897,7 @@ OH25 <- ggplot(CH25_OH, aes(
   scale_fill_gradientn(colors = hombre) +
   scale_y_continuous(limits = c(0, y_max_OH)) +
   labs(
-    title = "Organizations by Hours in Engagement (2025)",
+    title = "Organizations by Hours Engaged (2025)",
     subtitle = "Organizations with 0 engagement hours have been excluded",
     x = NULL,
     y = "Total Hours"
@@ -1447,7 +1447,7 @@ OH23_NL <- ggplot(CH23_OH_NL, aes(x = Organization, y = `Total hours 2023`,
   geom_col() +
   scale_fill_gradientn(colors = hombre) +
   scale_y_continuous(limits = c(0, y_max_OH_NL)) +
-  labs(title = "Organizations by Hours in Engagement (2023, Non-LEAD)",
+  labs(title = "Organizations by Hours Engaged (2023, Non-LEAD)",
        subtitle = "Organizations with 0 engagement hours have been excluded",
        x = NULL, y = "Total Hours") +
   theme_minimal() +
@@ -1472,7 +1472,7 @@ OH24_NL <- ggplot(CH24_OH_NL, aes(x = Organization, y = `Total hours 2024`,
   geom_col() +
   scale_fill_gradientn(colors = hombre) +
   scale_y_continuous(limits = c(0, y_max_OH_NL)) +
-  labs(title = "Organizations by Hours in Engagement (2024, Non-LEAD)",
+  labs(title = "Organizations by Hours Engaged (2024, Non-LEAD)",
        subtitle = "Organizations with 0 engagement hours have been excluded",
        x = NULL, y = "Total Hours") +
   theme_minimal() +
@@ -1497,7 +1497,7 @@ OH25_NL <- ggplot(CH25_OH_NL, aes(x = Organization, y = `Total hours 2025`,
   geom_col() +
   scale_fill_gradientn(colors = hombre) +
   scale_y_continuous(limits = c(0, y_max_OH_NL)) +
-  labs(title = "Organizations by Hours in Engagement (2025, Non-LEAD)",
+  labs(title = "Organizations by Hours Engaged (2025, Non-LEAD)",
        subtitle = "Organizations with 0 engagement hours have been excluded",
        x = NULL, y = "Total Hours") +
   theme_minimal() +
